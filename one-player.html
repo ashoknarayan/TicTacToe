@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>One Player Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #111;
+      color: #eee;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+      margin: 50px auto;
+      width: 320px;
+    }
+    .cell {
+      background: #222;
+      border: 2px solid #444;
+      font-size: 32px;
+      height: 100px;
+      cursor: pointer;
+    }
+    .cell:disabled {
+      cursor: default;
+      color: #bbb;
+    }
+    #homeBtn {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>One Player Game</h1>
+<div class="board" id="board"></div>
+<p id="message"></p>
+<button id="homeBtn" onclick="location.href='index.html'">Home</button>
+
+<script>
+  const board = document.getElementById("board");
+  const message = document.getElementById("message");
+
+  let gameOver = false;
+
+  function createBoard() {
+    for (let i = 0; i < 9; i++) {
+      const btn = document.createElement("button");
+      btn.classList.add("cell");
+      btn.addEventListener("click", () => playerMove(btn));
+      board.appendChild(btn);
+    }
+  }
+
+  function playerMove(cell) {
+    if (!gameOver && cell.textContent === "") {
+      cell.textContent = "X";
+      cell.disabled = true;
+      if (checkWin("X")) return delayedEnd("You win!");
+      if (isDraw()) return delayedEnd("It's a draw!");
+      message.textContent = "Let me play...";
+      setTimeout(aiMove, 1000);
+    }
+  }
+
+  function aiMove() {
+    const cells = [...board.children];
+    const emptyCells = cells.map((c, i) => c.textContent === "" ? i : -1).filter(i => i !== -1);
+
+    // Try to win
+    for (let idx of emptyCells) {
+      cells[idx].textContent = "O";
+      if (checkWin("O")) {
+        cells[idx].disabled = true;
+        return delayedEnd("Computer wins!");
+      }
+      cells[idx].textContent = "";
+    }
+
+    // Block player
+    for (let idx of emptyCells) {
+      cells[idx].textContent = "X";
+      if (checkWin("X")) {
+        cells[idx].textContent = "O";
+        cells[idx].disabled = true;
+        if (checkWin("O")) return delayedEnd("Computer wins!");
+        if (isDraw()) return delayedEnd("It's a draw!");
+        return;
+      }
+      cells[idx].textContent = "";
+    }
+
+    // Random move
+    const randIdx = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    cells[randIdx].textContent = "O";
+    cells[randIdx].disabled = true;
+
+    if (checkWin("O")) return delayedEnd("Computer wins!");
+    if (isDraw()) return delayedEnd("It's a draw!");
+    message.textContent = "";
+  }
+
+  function checkWin(player) {
+    const c = [...board.children].map(cell => cell.textContent);
+    const wins = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+    return wins.some(([a,b,c2]) =>
+      c[a] === player && c[b] === player && c[c2] === player
+    );
+  }
+
+  function isDraw() {
+    return [...board.children].every(c => c.textContent !== "");
+  }
+
+  function delayedEnd(result) {
+    gameOver = true;
+    [...board.children].forEach(cell => cell.disabled = true);
+    setTimeout(() => {
+      alert(result);
+      resetGame();
+    }, 200);
+  }
+
+  function resetGame() {
+    [...board.children].forEach(cell => {
+      cell.textContent = "";
+      cell.disabled = false;
+    });
+    gameOver = false;
+    message.textContent = "";
+  }
+
+  createBoard();
+</script>
+
+</body>
+</html>
